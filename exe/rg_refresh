@@ -1,0 +1,44 @@
+#!/bin/sh
+#! -*-ruby-*-
+# frozen_string_literal: true
+eval 'exec ruby -s -x -S $0 ${1+"$@"}' \
+  if false
+
+# vim: ft=ruby
+
+abort "usage: #$0 -config=/path/to/config.yml" \
+  unless $config && ARGV.empty?
+
+require 'rg_refresh'
+require 'yaml'
+
+config = YAML.load(File.read($config), :symbolize_names=>true)
+
+begin
+  puts 'Connecting...'
+  $netgear = RgRefresh::Netgear.start(config.fetch(:netgear))
+  $rg = RgRefresh::PublishWrapper.new(config.fetch(:mqtt))
+
+  puts 'Affirming bypass mode (manually power RG *OFF* if necessary)...'
+  $netgear.transition_to(:bypass)
+  sleep 15
+  $rg.transition_to(:bypass)
+  sleep 15
+
+  puts 'Transitioning to re-auth mode (manually power RG *ON* if necessary)...'
+  $rg.transition_to(:reauth)
+  $netgear.transition_to(:reauth) # point of no return
+
+  puts 'Waiting for re-auth...'
+  sleep 240
+
+  puts 'Transitioning to bypass mode (manually power RG *OFF* if necessary)...'
+  $netgear.transition_to(:bypass)
+  sleep 15
+  $rg.transition_to(:bypass)
+  sleep 15
+ensure
+  puts 'Disconnecting...'
+  $rg.finish
+  $netgear.finish
+end

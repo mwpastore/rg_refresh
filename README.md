@@ -83,7 +83,7 @@ Run the script to make sure it works correctly, passing in the path to the
 configuration file created above. For example:
 
 ```console
-$ rg_refresh -config=/etc/rg_refresh.yml
+$ rg_refresh -c /etc/rg_refresh.yml
 ```
 
 Finally, schedule the script to run once a week or so, during off-hours,

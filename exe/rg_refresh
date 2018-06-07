@@ -1,18 +1,30 @@
-#!/bin/sh
-#! -*-ruby-*-
+#!/usr/bin/env ruby
 # frozen_string_literal: true
-eval 'exec ruby -s -x -S $0 ${1+"$@"}' \
-  if false
-
-# vim: ft=ruby
-
-abort "usage: #$0 -config=/path/to/config.yml" \
-  unless $config && ARGV.empty?
-
+require 'optparse'
 require 'rg_refresh'
 require 'yaml'
 
-config = YAML.load(File.read($config), :symbolize_names=>true)
+opts = {}
+optparser = OptionParser.new do |cmd|
+  cmd.banner = "usage: #$0 [options]"
+
+  cmd.on('-c FILE', '--config=FILE', 'Configuration file') do |v|
+    opts[:config_file] = v
+  end
+end
+
+begin
+  optparser.parse!
+rescue OptionParser::InvalidOption=>e
+  $stderr.puts e
+
+  abort optparser.help
+end
+
+abort optparser.help \
+  unless opts[:config_file] && ARGV.empty?
+
+config = YAML.load(File.read(opts[:config_file]), :symbolize_names=>true)
 
 begin
   puts 'Connecting...'
